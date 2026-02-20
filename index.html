@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Habit Tracker </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+background:linear-gradient(135deg,#141e30,#243b55);
+color:white;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.app{
+background:rgba(255,255,255,0.1);
+backdrop-filter:blur(15px);
+padding:25px;
+border-radius:20px;
+width:500px;
+}
+
+h2{
+text-align:center;
+margin-bottom:15px;
+}
+
+input{
+padding:8px;
+border:none;
+border-radius:8px;
+width:70%;
+}
+
+button{
+padding:8px 12px;
+border:none;
+border-radius:8px;
+background:#4cafef;
+color:white;
+cursor:pointer;
+}
+
+.habit-list{
+margin-top:15px;
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+}
+
+.habit-item{
+background:#2c3e50;
+padding:6px 10px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.habit-item.active{
+background:#4cafef;
+}
+
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:6px;
+margin-top:15px;
+}
+
+.day{
+width:50px;
+height:50px;
+border-radius:8px;
+display:flex;
+justify-content:center;
+align-items:center;
+cursor:pointer;
+background:#2c3e50;
+font-size:12px;
+}
+
+.level-1{ background:#2ecc71; }
+.level-2{ background:#27ae60; }
+.level-3{ background:#1e8449; }
+
+.nav{
+display:flex;
+justify-content:space-between;
+margin-top:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h2>Habit Tracker</h2>
+
+<div style="display:flex; gap:10px;">
+<input type="text" id="habitInput" placeholder="Add new habit">
+<button id="addHabitBtn">Add</button>
+</div>
+
+<div class="habit-list" id="habitList"></div>
+
+<div class="nav">
+<button id="prevBtn">⬅</button>
+<h3 id="monthTitle"></h3>
+<button id="nextBtn">➡</button>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+let currentDate = new Date();
+let habits = JSON.parse(localStorage.getItem("habits")) || {};
+let currentHabit = null;
+
+const habitInput = document.getElementById("habitInput");
+const addHabitBtn = document.getElementById("addHabitBtn");
+const habitList = document.getElementById("habitList");
+const calendar = document.getElementById("calendar");
+const monthTitle = document.getElementById("monthTitle");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+function save(){
+localStorage.setItem("habits", JSON.stringify(habits));
+}
+
+function renderHabitList(){
+habitList.innerHTML="";
+Object.keys(habits).forEach(name=>{
+const div = document.createElement("div");
+div.className="habit-item";
+if(name === currentHabit) div.classList.add("active");
+div.textContent=name;
+
+div.onclick=()=>{
+currentHabit=name;
+renderHabitList();
+renderCalendar();
+};
+
+habitList.appendChild(div);
+});
+}
+
+function renderCalendar(){
+
+calendar.innerHTML="";
+
+if(!currentHabit){
+calendar.innerHTML="<p>Select a habit</p>";
+return;
+}
+
+let year = currentDate.getFullYear();
+let month = currentDate.getMonth();
+monthTitle.textContent =
+currentDate.toLocaleString("default",{month:"long"}) + " " + year;
+
+let daysInMonth = new Date(year, month+1, 0).getDate();
+
+for(let day=1; day<=daysInMonth; day++){
+
+let dateKey = `${year}-${month+1}-${day}`;
+
+let div = document.createElement("div");
+div.className="day";
+div.textContent=day;
+
+let level = habits[currentHabit][dateKey] || 0;
+
+if(level === 1) div.classList.add("level-1");
+if(level === 2) div.classList.add("level-2");
+if(level >= 3) div.classList.add("level-3");
+
+div.onclick=()=>{
+habits[currentHabit][dateKey] =
+(habits[currentHabit][dateKey] || 0) + 1;
+
+if(habits[currentHabit][dateKey] > 3)
+habits[currentHabit][dateKey]=1;
+
+save();
+renderCalendar();
+};
+
+calendar.appendChild(div);
+}
+}
+
+addHabitBtn.addEventListener("click",()=>{
+const name = habitInput.value.trim();
+if(!name) return;
+if(habits[name]){
+alert("Habit already exists");
+return;
+}
+habits[name]={};
+currentHabit=name;
+habitInput.value="";
+save();
+renderHabitList();
+renderCalendar();
+});
+
+prevBtn.addEventListener("click",()=>{
+currentDate.setMonth(currentDate.getMonth()-1);
+renderCalendar();
+});
+
+nextBtn.addEventListener("click",()=>{
+currentDate.setMonth(currentDate.getMonth()+1);
+renderCalendar();
+});
+
+renderHabitList();
+renderCalendar();
+
+});
+</script>
+
+</body>
+</html>
